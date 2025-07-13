@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+// @ts-ignore
 import { DataGrid, Column, SelectColumn } from 'react-data-grid';
 import { 
   MessageSquare, 
@@ -38,8 +38,9 @@ interface EditHistory {
 
 interface DataReviewEditorProps {
   initialData: any[];
-  onSave: (data: any[]) => void;
-  onCancel: () => void;
+  onSave?: (data: any[]) => void;
+  onCancel?: () => void;
+  onDataChange?: (data: any[]) => void;
   metadata?: {
     rowsGenerated: number;
     qualityScore: number;
@@ -52,6 +53,7 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
   initialData,
   onSave,
   onCancel,
+  onDataChange,
   metadata
 }) => {
   const [data, setData] = useState<DataRow[]>(() => 
@@ -59,7 +61,7 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
   );
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  
   const [nlPrompt, setNlPrompt] = useState('');
   const [isProcessingNL, setIsProcessingNL] = useState(false);
   const [editHistory, setEditHistory] = useState<EditHistory[]>([]);
@@ -79,7 +81,7 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
         sortable: true,
         editable: true,
         width: 150,
-        renderEditCell: ({ row, onRowChange, column }) => (
+        renderEditCell: ({ row, onRowChange, column }: any) => (
           <input
             type="text"
             value={row[column.key] || ''}
@@ -121,8 +123,12 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
   const handleRowsChange = useCallback((rows: DataRow[]) => {
     const oldData = data;
     setData(rows);
+    onDataChange?.(rows.map(row => {
+      const { id, ...rest } = row;
+      return rest;
+    }));
     addToHistory('edit_cells', { old: oldData, new: rows }, 'Manual cell edit');
-  }, [data, addToHistory]);
+  }, [data, addToHistory, onDataChange]);
 
   const handleDeleteRows = useCallback(() => {
     if (selectedRows.size === 0) {
@@ -130,7 +136,7 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
       return;
     }
 
-    const oldData = data;
+    // const oldData = data;
     const newData = data.filter(row => !selectedRows.has(row.id));
     setData(newData);
     setSelectedRows(new Set());
@@ -493,7 +499,7 @@ export const DataReviewEditor: React.FC<DataReviewEditorProps> = ({
             </button>
             
             <button
-              onClick={() => onSave(data.map(row => {
+              onClick={() => onSave?.(data.map(row => {
                 const { id, ...rest } = row;
                 return rest;
               }))}

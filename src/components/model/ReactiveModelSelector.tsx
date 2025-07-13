@@ -122,7 +122,7 @@ export const ReactiveModelSelector: React.FC<ReactiveModelSelectorProps> = ({ is
       case 'openai': return 'gpt-4.1-2025-04-14';
       case 'anthropic': return 'claude-sonnet-4-20250514';
       case 'ollama': return 'phi3:mini'; // Recommended for DataGenesis
-      default: return availableModels[provider]?.[0];
+      default: return availableModels[provider as keyof typeof availableModels]?.[0];
     }
   };
 
@@ -261,7 +261,7 @@ export const ReactiveModelSelector: React.FC<ReactiveModelSelectorProps> = ({ is
               onChange={(e) => setSelectedModel(e.target.value)}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              {availableModels[selectedProvider]?.map((model) => (
+              {availableModels[selectedProvider as keyof typeof availableModels]?.map((model: string) => (
                 <option key={model} value={model}>
                   {model}
                   {selectedProvider === 'ollama' && model === 'phi3:mini' && ' (Recommended)'}

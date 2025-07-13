@@ -110,7 +110,7 @@ export const modelStatusAtom = atom((get) => {
 // Action atoms for model operations
 export const configureModelAtom = atom(
   null,
-  async (get, set, config: Omit<ModelConfig, 'isActive' | 'lastTested'>) => {
+  async (_get, set, config: Omit<ModelConfig, 'isActive' | 'lastTested'>) => {
     set(isConfiguringModelAtom, true);
     
     try {
@@ -190,7 +190,7 @@ export const testModelConnectionAtom = atom(
 
 export const removeModelAtom = atom(
   null,
-  (get, set) => {
+  (_get, set) => {
     set(modelConfigAtom, null);
     set(modelHealthAtom, {
       status: 'offline',

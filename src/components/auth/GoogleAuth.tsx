@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Shield, Loader2 } from 'lucide-react';
+import { User, Shield, Loader2, Mail } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { toast } from 'sonner';
 

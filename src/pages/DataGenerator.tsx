@@ -5,25 +5,28 @@ import { useStore } from '../store/useStore';
 import { ApiService } from '../lib/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useModel } from '../components/ModelProvider';
-import AIProcessLogger from '../components/AIProcessLogger';
-import { 
-  Database, 
-  Upload, 
-  Play, 
-  Download,
-  FileText,
-  Image,
-  BarChart3,
-  Brain,
-  CheckCircle,
-  MessageSquare,
-  Lightbulb,
-  Sparkles,
-  AlertCircle,
-  Wifi,
-  WifiOff,
-  Activity
-} from 'lucide-react';
+  import { RealTimeActivityLogger } from '../components/RealTimeActivityLogger';
+  import { DataReviewEditor } from '../components/data/DataReviewEditor';
+  import { 
+    Database, 
+    Upload, 
+    Play, 
+    Download,
+    FileText,
+    Image,
+    BarChart3,
+    Brain,
+    CheckCircle,
+    MessageSquare,
+    Lightbulb,
+    Sparkles,
+    AlertCircle,
+    Wifi,
+    WifiOff,
+    Activity,
+    Edit3,
+    XCircle
+  } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 
@@ -48,9 +51,10 @@ const DataGenerator: React.FC = () => {
     quality_level: 'high',
     privacy_level: 'maximum'
   });
-  const [processLogs, setProcessLogs] = useState<any[]>([]);
+  
   const [showProcessLogger, setShowProcessLogger] = useState(false);
   const [aiConfigured, setAiConfigured] = useState(false);
+  const [showDataEditor, setShowDataEditor] = useState(false);
   
   const { user, isGuest } = useStore();
   const { currentModel } = useModel();
@@ -109,39 +113,12 @@ const DataGenerator: React.FC = () => {
         setGenerationProgress(data.progress);
       }
       
-      // Add real-time log entry for agent activities
-      if (data.step && data.message) {
-        const logEntry = {
-          id: Date.now() + Math.random(),
-          timestamp: new Date().toISOString(),
-          level: data.progress === -1 ? 'error' : data.progress === 100 ? 'success' : 'info',
-          message: data.message,
-          step: data.step,
-          progress: data.progress,
-          agent: data.step.includes('domain') ? 'domain' : 
-                 data.step.includes('privacy') ? 'privacy' :
-                 data.step.includes('bias') ? 'bias' :
-                 data.step.includes('relationship') ? 'relationship' :
-                 data.step.includes('quality') ? 'quality' :
-                 data.step.includes('generation') ? 'gemini' : 'system',
-          metrics: data.agent_data ? {
-            qualityScore: data.agent_data.quality_score,
-            privacyScore: data.agent_data.privacy_score,
-            biasScore: data.agent_data.bias_score
-          } : undefined
-        };
-        
-        setProcessLogs(prev => {
-          const newLogs = [...prev, logEntry];
-          // Keep only the last 50 logs to prevent memory issues
-          return newLogs.slice(-50);
-        });
-      }
+      // Real-time logs are now handled by RealTimeActivityLogger component
       
       if (data.progress === 100) {
         setIsGenerating(false);
         setGenerationStep(4);
-        toast.success('Generation completed successfully!');
+        toast.success('Generation completed successfully! Review your data before downloading.');
       } else if (data.progress === -1) {
         setIsGenerating(false);
         toast.error('Generation failed: ' + data.message);
@@ -268,7 +245,7 @@ const DataGenerator: React.FC = () => {
     setGenerationStep(3);
     setGenerationProgress(0);
     setShowProcessLogger(true);
-    setProcessLogs([]);
+    // Logs handled by RealTimeActivityLogger
     
     try {
       let sourceData = [];
@@ -888,6 +865,13 @@ const DataGenerator: React.FC = () => {
               </div>
               <div className="space-y-2 mt-4">
                 <button 
+                  onClick={() => setShowDataEditor(true)}
+                  className="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Review & Edit Data
+                </button>
+                <button 
                   onClick={() => handleExportData('csv')}
                   className="w-full py-2 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-300 flex items-center justify-center gap-2"
                 >
@@ -946,12 +930,58 @@ const DataGenerator: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Process Logger */}
-      <AIProcessLogger 
-        isVisible={showProcessLogger && isGenerating}
-        logs={processLogs}
-        currentProgress={generationProgress}
-      />
+      {/* Real-time Activity Logger */}
+      {(showProcessLogger && isGenerating) && (
+        <motion.div
+          className="fixed bottom-4 right-4 w-96 z-50"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+        >
+          <RealTimeActivityLogger 
+            isGenerating={isGenerating}
+            maxLogs={50}
+          />
+        </motion.div>
+      )}
+
+      {/* Data Review Modal */}
+      {showDataEditor && generatedData && (
+        <motion.div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-6xl h-[80vh] flex flex-col"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-xl font-semibold text-white">Review & Edit Generated Data</h2>
+              <button
+                onClick={() => setShowDataEditor(false)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <XCircle className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <DataReviewEditor 
+                initialData={generatedData.data}
+                onDataChange={(newData: any[]) => {
+                  setGeneratedData((prev: any) => ({
+                    ...prev,
+                    data: newData
+                  }));
+                }}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
