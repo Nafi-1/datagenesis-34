@@ -6,7 +6,8 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 // @ts-ignore
-import { DataGrid, Column, SelectColumn } from 'react-data-grid';
+import DataGrid, {Column, SelectColumn } from 'react-data-grid';
+
 import { 
   MessageSquare, 
   Wand2, 
